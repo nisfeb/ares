@@ -1,3 +1,5 @@
+use num_traits::Zero;
+
 /** Bit arithmetic & logic jets
  */
 use crate::interpreter::{Context, Error};
@@ -205,20 +207,51 @@ pub fn jet_rev(context: &mut Context, subject: Noun) -> Result {
 
     let dat = slot(arg, 7)?.as_atom()?;
 
-    let bits = len << boz;
+    match boz {
+        0 => {
+            let len = len as usize;
+            let (mut output, dest) =
+                unsafe { IndirectAtom::new_raw_mut_bitslice(&mut context.stack, len) };
+            let src = dat.as_bitslice();
+            (0..len).for_each(|i| {
+                dest[i..(i+1)].copy_from_bitslice(&src[(len - (i+1))..(len - i)]);
+            });
 
-    let src = dat.as_bitslice();
-    let (mut output, dest) =
-        unsafe { IndirectAtom::new_raw_mut_bitslice(&mut context.stack, bits as usize) };
-
-    let len = len as usize;
-    let total_len = len << boz;
-
-    for (start, end) in (0..len).map(|b| (b << boz, (b + 1) << boz)) {
-        dest[start..end].copy_from_bitslice(&src[(total_len - end)..(total_len - start)]);
+            Ok(unsafe { output.normalize_as_atom() }.as_noun())
+        },
+        3 => {
+            let (mut output, dest) =
+                unsafe { IndirectAtom::new_raw_mut_bytes(&mut context.stack, len as usize) };
+            let len = len as usize;
+            let mut needs_trim = true;
+            for (i, data) in dat.as_bytes()
+                                .iter()
+                                .rev()
+                                .skip_while(|d| {
+                                    if !d.is_zero() {
+                                        needs_trim = false;
+                                    }
+                                    needs_trim
+                                })
+                                .take(len)
+                                .enumerate() {
+                                    dest[i] = *data;
+                                }
+            return Ok(unsafe { output.normalize_as_atom() }.as_noun())
+        },
+        _ => {
+            let bits = len << boz;
+            let (mut output, dest) =
+                unsafe { IndirectAtom::new_raw_mut_bitslice(&mut context.stack, bits as usize) };
+            let src = dat.as_bitslice();
+            let len = len as usize;
+            let total_len = len << boz;
+            for (start, end) in (0..len).map(|b| (b << boz, (b + 1) << boz)) {
+                dest[start..end].copy_from_bitslice(&src[(total_len - end)..(total_len - start)]);
+            }
+            Ok(unsafe { output.normalize_as_atom() }.as_noun())
+        },
     }
-
-    Ok(unsafe { output.normalize_as_atom() }.as_noun())
 }
 
 pub fn jet_rip(context: &mut Context, subject: Noun) -> Result {

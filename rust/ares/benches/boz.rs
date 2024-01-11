@@ -1,7 +1,7 @@
-use criterion::{criterion_group, criterion_main, Criterion};
 use ares::jets::bits::jet_rev;
 use ares::jets::util::test::init_context;
 use ares::noun::{D, T};
+use criterion::{criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let ctx = &mut init_context();

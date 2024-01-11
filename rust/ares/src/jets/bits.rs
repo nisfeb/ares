@@ -214,31 +214,33 @@ pub fn jet_rev(context: &mut Context, subject: Noun) -> Result {
                 unsafe { IndirectAtom::new_raw_mut_bitslice(&mut context.stack, len) };
             let src = dat.as_bitslice();
             (0..len).for_each(|i| {
-                dest[i..(i+1)].copy_from_bitslice(&src[(len - (i+1))..(len - i)]);
+                dest[i..(i + 1)].copy_from_bitslice(&src[(len - (i + 1))..(len - i)]);
             });
 
             Ok(unsafe { output.normalize_as_atom() }.as_noun())
-        },
+        }
         3 => {
             let (mut output, dest) =
                 unsafe { IndirectAtom::new_raw_mut_bytes(&mut context.stack, len as usize) };
             let len = len as usize;
             let mut needs_trim = true;
-            for (i, data) in dat.as_bytes()
-                                .iter()
-                                .rev()
-                                .skip_while(|d| {
-                                    if !d.is_zero() {
-                                        needs_trim = false;
-                                    }
-                                    needs_trim
-                                })
-                                .take(len)
-                                .enumerate() {
-                                    dest[i] = *data;
-                                }
-            return Ok(unsafe { output.normalize_as_atom() }.as_noun())
-        },
+            for (i, data) in dat
+                .as_bytes()
+                .iter()
+                .rev()
+                .skip_while(|d| {
+                    if !d.is_zero() {
+                        needs_trim = false;
+                    }
+                    needs_trim
+                })
+                .take(len)
+                .enumerate()
+            {
+                dest[i] = *data;
+            }
+            return Ok(unsafe { output.normalize_as_atom() }.as_noun());
+        }
         _ => {
             let bits = len << boz;
             let (mut output, dest) =
@@ -250,7 +252,7 @@ pub fn jet_rev(context: &mut Context, subject: Noun) -> Result {
                 dest[start..end].copy_from_bitslice(&src[(total_len - end)..(total_len - start)]);
             }
             Ok(unsafe { output.normalize_as_atom() }.as_noun())
-        },
+        }
     }
 }
 
